@@ -13,8 +13,8 @@ RUN pip install -r requirements.txt
 # Expõe a porta 5000 para acesso à API
 EXPOSE 5000
 
-# Define o comando padrão para executar a aplicação Flask
-#CMD ["python", "app.py"]
+# Define o comando padrão para executar a aplicação
+CMD ["python", "app.py"]
 
 #inicia o servidor flask em modo de desenvolvimento 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]
+#CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]
