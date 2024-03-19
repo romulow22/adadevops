@@ -8,11 +8,7 @@ services:
       - 8080:15672
     volumes:
       - ./rabbitmq/data/:/var/lib/rabbitmq/
-      - ./rabbitmq/log/:/var/log/rabbitmq/
-    environment:
-      RABBITMQ_DEFAULT_USER: "user"
-      RABBITMQ_DEFAULT_PASS: "user"
-      RABBITMQ_DEFAULT_VHOST: "/"
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     networks:
       - default_net
   redis:
@@ -41,8 +37,11 @@ services:
     volumes:
       - ./minio/data/:/data
     environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ROOT_USER_FILE=minio_root_usr
+      - MINIO_ROOT_PASSWORD_FILE=minio_root_pwd
+    secrets:
+      - minio_root_usr
+      - minio_root_pwd
   minio-mc:
     container_name: minio-mc
     image: minio/mc:RELEASE.2024-03-07T00-31-49Z
@@ -52,9 +51,32 @@ services:
       - minio
     networks:
       - default_net
-    environment:
-      - MC_HOST_myminio=http://admin:minioadmin@minio:9000
-    entrypoint: /bin/bash
+#    environment:
+#      - MC_HOST_myminio=http://admin:minioadmin@minio:9000
+#    entrypoint: /bin/bash
+    secrets:
+      - minio_root_usr
+      - minio_root_pwd
+    entrypoint: >
+      /bin/sh -c "
+      export MINIO_ROOT_USER_FILE=/run/secrets/minio_root_usr;
+      export MINIO_ROOT_PASSWORD_FILE=/run/secrets/minio_root_pwd;
+      export MINIO_ROOT_USER=$$(cat $$MINIO_ROOT_USER_FILE);
+      export MINIO_ROOT_PASSWORD=$$(cat $$MINIO_ROOT_PASSWORD_FILE);
+      export MC_HOST_myminio=http://$$MINIO_ROOT_USER:$$MINIO_ROOT_PASSWORD@minio:9000;
+      /bin/bash"
+#  app:
+#    image: local/pythonapp:1.0
+#    container_name: app
+#    ports:
+#      - '8083:5000'
+#    networks:
+#      - default_net
+secrets:
+  minio_root_usr:
+    file: ./minio/secrets/minio_usr.txt
+  minio_root_pwd:
+    file: ./minio/secrets/minio_pwd.txt
 networks:
   default_net:
     driver: bridge
