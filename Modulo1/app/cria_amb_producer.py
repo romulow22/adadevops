@@ -15,7 +15,7 @@ def setup_rabbitmq():
     routing_key = 'transaction_routing_key'
     
     credentials = pika.PlainCredentials('admin', 'admin1234')
-    connection_params = pika.ConnectionParameters(host='localhost', port=5672, virtual_host='projetoada', credentials=credentials)
+    connection_params = pika.ConnectionParameters(host='rabbitmq', port=5672, virtual_host='projetoada', credentials=credentials)
     connection = pika.BlockingConnection(connection_params)
     channel = connection.channel()
     
@@ -71,7 +71,7 @@ def setup_minio():
     }
     policy_json = json.dumps(bucket_policy)  
        
-    client = minio.Minio("localhost:9000", access_key="admin", secret_key="admin1234", secure=False)
+    client = minio.Minio("minio:9000", access_key="admin", secret_key="admin1234", secure=False)
     found = client.bucket_exists(bucket_name)
     if not found:
         client.make_bucket(bucket_name)
@@ -93,8 +93,15 @@ def publish_message(channel, exchange_name, routing_key, message):
 def publish_json_to_exchange(channel, exchange_name, routing_key, count):
     url = f"https://api.mockaroo.com/api/0eee3010?count={count}&key=31e736b0"
     response = requests.get(url)
-    response.raise_for_status()  # Levanta uma exceção para respostas 4xx/5xx
-    json_objects = response.json()
+    print(f"Status code: {response.status_code}")
+    print(f"Response: {response.text}")
+    if response.status_code == 200 and "error" not in response.text:
+        json_objects = response.json()
+    else:
+        url = f"https://api.mockaroo.com/api/6ffc21b0?count={count}&key=e3a906f0"
+        response = requests.get(url)
+        response.raise_for_status()  # Levanta uma exceção para respostas 4xx/5xx
+        json_objects = response.json()
     messages_sent = 0
     for obj in json_objects:        
         message = json.dumps(obj)
@@ -113,9 +120,9 @@ def main():
         exchange_name = 'transaction_exchange'
         routing_key = 'transaction_routing_key'
         while True:
-            count = random.randint(1, 10)  # Gera um número aleatório entre 1 e 10
+            count = random.randint(10, 20)  # Gera um número aleatório entre 1 e 10
             publish_json_to_exchange(channel, exchange_name, routing_key, count)
-            time.sleep(3)  # Aguarda 3 segundos antes de publicar novamente
+            time.sleep(60)  # Aguarda 3 segundos antes de publicar novamente
     except KeyboardInterrupt:
         print("Script interrompido pelo usuário")
     finally:
