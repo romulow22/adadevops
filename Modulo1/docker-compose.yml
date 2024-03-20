@@ -5,7 +5,7 @@ services:
     container_name: rabbitmq
     ports:
       - 5672:5672
-      - 15672:15672
+      - 8080:15672
     volumes:
       - ./rabbitmq/data/:/var/lib/rabbitmq/
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
@@ -23,7 +23,7 @@ services:
     hostname: redis
     ports:
       - 6379:6379
-      - 8001:8001
+      - 8081:8001
     volumes:
       - ./redis/data/:/data/
     environment:
@@ -43,7 +43,7 @@ services:
     container_name: minio
     ports:
       - 9000:9000
-      - 9001:9001
+      - 8082:9001
     networks:
       - default_net
     volumes:
@@ -96,12 +96,9 @@ services:
     tty: true        # docker run -t
     networks:
       - default_net
-    command: >
-      /bin/sh -c "/bin/bash"
- #     while ! nc -z rabbitmq 5672; do sleep 1; done;
- #     while ! nc -z redis 6379; do sleep 1; done;
- #     while ! nc -z minio 9000; do sleep 1; done;
- #     /bin/bash"
+    #for debugging
+    #command: >
+    #  /bin/sh -c "/bin/bash"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -112,7 +109,6 @@ services:
   cria_amb_producer:
     extends: baseapp
     container_name: cria_amb_producer
-    #entrypoint: /bin/sh -c "/bin/bash"
     entrypoint: python /app/cria_amb_producer.py
     depends_on:
       - baseapp

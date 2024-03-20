@@ -22,19 +22,18 @@ def is_fraudulent(event, redis_client):
     country = event['country']
     fraud_reasons = []
 
-    # Parse the event timestamp as an offset-aware datetime object
+    # Faz o Parse do timestamp com o offset
     timestamp = datetime.fromisoformat(event['timestamp'].replace('Z', '+00:00'))
     
-    # Parse the cookie_expiration field
+    # Faz o Parse do campo cookie_expiration
     if ' UTC' in event['cookie_expiration']:
+        #Assumindo que tenha UTC
         cookie_expiration_str = event['cookie_expiration'].replace(' UTC', '')
-        # Assuming the cookie expiration date is in UTC, we add the timezone information
         cookie_expiration = datetime.fromisoformat(cookie_expiration_str).replace(tzinfo=timezone.utc)
     else:
-        # If it's already in an ISO format, just replace 'Z' with timezone information
+        #Caso já esteja no formato ISO
         cookie_expiration = datetime.fromisoformat(event['cookie_expiration'].replace('Z', '+00:00'))
     
-    # Now both cookie_expiration and timestamp are offset-aware and can be compared
     if cookie_expiration < timestamp:
         fraud_reasons.append('Cookie Expirado')
 
@@ -48,8 +47,9 @@ def is_fraudulent(event, redis_client):
             time_difference = timestamp - last_timestamp
             if time_difference < timedelta(hours=2) and time_difference.total_seconds() > 0:
                 fraud_reasons.append('Diferença entre paises menor que 2 horas.')
-            elif time_difference.total_seconds() < 0:  # Event came out of order
-                return False, fraud_reasons  # Do not flag as fraud but also do not update Redis
+            # Caso o evento tenha vindo fora de ordem não atualiza redis  
+            elif time_difference.total_seconds() < 0:
+                return False, fraud_reasons
 
     # Verifica se o tempo de resposta é muito alto
     response_time_threshold = 5000
@@ -75,7 +75,6 @@ def generate_fraud_report(event, fraud_reasons):
     report_size = report_data.getbuffer().nbytes
     return report_name, report_data, report_size
 
-
 # Callback para processar as mensagens
 def callback(ch, method, properties, body, redis_client):
     event = json.loads(body)
@@ -94,7 +93,7 @@ def save_pdf_to_minio(report_name, report_data, report_size):
     bucket_name = "reportes-antifraude"
     client.put_object(bucket_name, report_name, report_data, report_size)
     report_url = client.get_presigned_url("GET", bucket_name, report_name)
-    print(f" >>>> URL do Report:" + report_url.split('?')[0])
+    print(f" >>>> URL do Report:" + report_url.split('?')[0].replace('minio','localhost'))
 
 # Inicialização e execução do consumidor
 def start_consumer(channel, redis_client):

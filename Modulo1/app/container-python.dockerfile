@@ -16,9 +16,6 @@ ENV PYTHONUNBUFFERED 1
 # Instalando pacotes customizados
 RUN apt-get update && apt-get install -y netcat-openbsd curl wget && rm -rf /var/lib/apt/lists/*
 
-# Define o comando padrão
-CMD ["python"]
-
 # Define o comando padrão para executar a aplicação
 #CMD ["python", "app.py"]
 

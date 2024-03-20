@@ -81,15 +81,7 @@ def setup_minio():
     client.set_bucket_policy(bucket_name, policy_json)
     print("Minio configurado com sucesso!")
     
-
-
-# Produção de mensagens
-def publish_message(channel, exchange_name, routing_key, message):
-    properties = pika.BasicProperties( content_type='application/json', expiration='10000')
-    channel.basic_publish(exchange=exchange_name, routing_key=routing_key, body=message, properties=properties)
-    print(" [x] Message Sent ")
-    
-    
+# Produção de Mensagens 
 def publish_json_to_exchange(channel, exchange_name, routing_key, count):
     url = f"https://api.mockaroo.com/api/0eee3010?count={count}&key=31e736b0"
     response = requests.get(url)
@@ -120,9 +112,9 @@ def main():
         exchange_name = 'transaction_exchange'
         routing_key = 'transaction_routing_key'
         while True:
-            count = random.randint(10, 20)  # Gera um número aleatório entre 1 e 10
+            count = random.randint(10, 20)  # Gera um número aleatório entre 10 e 20
             publish_json_to_exchange(channel, exchange_name, routing_key, count)
-            time.sleep(60)  # Aguarda 3 segundos antes de publicar novamente
+            time.sleep(10)  # Aguarda 10 segundos antes de publicar novamente
     except KeyboardInterrupt:
         print("Script interrompido pelo usuário")
     finally:
